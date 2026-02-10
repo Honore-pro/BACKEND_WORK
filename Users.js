@@ -6,7 +6,7 @@ const express = require("express");
 
 const router = express.Router();
 
-// ===================== Authentication Middleware =====================
+// = Authentication Middleware =
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -28,7 +28,7 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-// ===================== Register Route =====================
+// = Register Route ==
 router.post("/register", async (req, res) => {
   const { name, email, username, password } = req.body;
   if (!name || !email || !username || !password) {
@@ -61,7 +61,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-// ===================== LOGIN ROUTE =====================
+// == LOGIN ROUTE =
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
 
@@ -92,10 +92,10 @@ router.post("/login", (req, res) => {
     // Create JWT with user ID, role, and department
     const token = jwt.sign(
       {
-        id: user.ID,          // assuming your primary key is ID
+        id: user.ID,
         username: user.User_Name,
-        role: user.Role || "user",        // default to "user" if not in DB
-        department: user.Department || "", // default empty if not in DB
+        role: user.Role || "user",       
+        department: user.Department || "", 
       },
       process.env.JWT_SECRET || "secretKey",
       { expiresIn: "1h" }
@@ -105,9 +105,35 @@ router.post("/login", (req, res) => {
   });
 });
 
-// ===================== Protected Route Example =====================
-router.get("/profile", authenticateToken, (req, res) => {
-  res.status(200).json({ message: "Protected route accessed successfully", user: req.user });
+// = Protected Profile Route (ID check) =
+router.get("/profile/:id", authenticateToken, (req, res) => {
+  const requestedId = parseInt(req.params.id); 
+  const tokenUserId = req.user.id;             
+  // Check if the user is accessing their own profile
+  if (requestedId !== tokenUserId) {
+    return res.status(403).json({
+      message: "Access denied. You can only access your own profile.",
+    });
+  }
+
+  // Fetch user profile from database
+  const query = "SELECT ID, Full_Names, email, User_Name FROM Users WHERE ID = ?";
+  db.execute(query, [requestedId], (err, results) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).json({ message: "Database error" });
+    }
+
+    if (results.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({
+      message: "Profile accessed successfully",
+      profile: results[0],
+    });
+  });
 });
+
 
 module.exports = router;

@@ -46,7 +46,7 @@ const authenticateToken = (req, res, next) => {
   }
 };
 
-/* REGISTER ROUTE (PUBLIC) */
+/* REGISTER ROUTE */
 
 router.post("/register", async (req, res) => {
   const { name, email, username, password } = req.body;
@@ -92,7 +92,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-/* PROTECTED ROUTE EXAMPLE */
+/* kurinda ROUTE EXAMPLE */
 
 router.get("/profile", authenticateToken, (req, res) => {
   res.status(200).json({
